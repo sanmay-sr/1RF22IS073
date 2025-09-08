@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, Card, CardContent, CircularProgress, Alert } from '@mui/material';
-import { findUrlByShortcode, updateUrl } from '../utils/storage';
+// No local storage dependency
 import { isExpired } from '../utils/urlUtils';
 import { ShortUrl } from '../types';
 import { Log } from '../logging/log';
@@ -22,38 +22,6 @@ export default function RedirectHandler() {
       await Log('url-shortener', 'error', 'redirect', 'Invalid shortcode provided');
       return;
     }
-
-    const url = findUrlByShortcode(shortcode);
-    
-    if (!url) {
-      setStatus('error');
-      setErrorMessage('Short URL not found');
-      await Log('url-shortener', 'error', 'redirect', `Short URL not found: ${shortcode}`);
-      return;
-    }
-
-    if (isExpired(url.expiresAt)) {
-      setStatus('error');
-      setErrorMessage('This short URL has expired');
-      await Log('url-shortener', 'error', 'redirect', `Expired short URL accessed: ${shortcode}`);
-      return;
-    }
-
-    // Record the click
-    const clickRecord = {
-      timestamp: Date.now(),
-      referrer: document.referrer || 'direct',
-      location: 'unknown'
-    };
-
-    const updatedUrl: ShortUrl = {
-      ...url,
-      totalClicks: url.totalClicks + 1,
-      clicks: [...url.clicks, clickRecord]
-    };
-
-    updateUrl(updatedUrl);
-    await Log('url-shortener', 'info', 'click', `Click recorded for ${shortcode}: ${url.longUrl}`);
 
     setStatus('redirecting');
     

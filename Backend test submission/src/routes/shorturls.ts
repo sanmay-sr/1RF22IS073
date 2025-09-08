@@ -83,6 +83,18 @@ router.get('/:shortcode', async (req: Request, res: Response) => {
   });
 });
 
+// GET /shorturls (list all)
+router.get('/', async (_req: Request, res: Response) => {
+  const all = Array.from(urls.values()).map(item => ({
+    url: item.url,
+    shortcode: item.shortcode,
+    createdAt: new Date(item.createdAt).toISOString(),
+    expiry: new Date(item.expiry).toISOString(),
+    totalClicks: item.totalClicks
+  }));
+  return res.json({ items: all });
+});
+
 export { router as shortUrlsRouter, urls };
 
 

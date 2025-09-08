@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { UrlEntry, ShortUrl } from '../types';
 import { isValidUrl, isValidShortcode, generateShortcode, isExpired } from '../utils/urlUtils';
-import { addUrl, loadData } from '../utils/storage';
+// Removed localStorage persistence
 import { apiCreateShortUrl, extractShortcodeFromLink } from '../utils/api';
 import { Log } from '../logging/log';
 
@@ -70,7 +70,7 @@ export default function UrlShortener() {
   };
 
   const checkShortcodeUniqueness = (shortcode: string, excludeIndex?: number): boolean => {
-    const data = loadData();
+    // Backend is source of truth now
     return !data.urls.some(url => 
       url.shortcode === shortcode && 
       !isExpired(url.expiresAt)
@@ -128,7 +128,6 @@ export default function UrlShortener() {
           totalClicks: 0,
           clicks: []
         };
-        addUrl(newUrl);
         newResults.push(newUrl);
         await Log('url-shortener', 'info', 'url-creation', `Created short URL via backend: ${sc} -> ${entry.longUrl}`);
       } catch (e: any) {

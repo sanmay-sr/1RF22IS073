@@ -51,4 +51,12 @@ export function extractShortcodeFromLink(shortLink: string): string {
   }
 }
 
+export interface ListItem { url: string; shortcode: string; createdAt: string; expiry: string; totalClicks: number }
+export async function apiListAll(): Promise<ListItem[]> {
+  const res = await fetch(`${BASE_URL}/shorturls`);
+  if (!res.ok) throw new Error('Failed to load items');
+  const data = await res.json();
+  return data.items as ListItem[];
+}
+
 

@@ -19,8 +19,7 @@ import {
   AccordionDetails
 } from '@mui/material';
 import { ShortUrl } from '../types';
-import { loadData } from '../utils/storage';
-import { apiGetStats } from '../utils/api';
+import { apiGetStats, apiListAll } from '../utils/api';
 import { isExpired } from '../utils/urlUtils';
 import { Log } from '../logging/log';
 
@@ -34,19 +33,21 @@ export default function Statistics() {
   }, []);
 
   const loadStatistics = async () => {
-    const data = loadData();
-    // Try to enrich with backend stats where available
-    const enriched = await Promise.all(
-      data.urls.map(async (u) => {
-        try {
-          const s = await apiGetStats(u.shortcode);
-          return { ...u, expiresAt: new Date(s.expiry).getTime(), totalClicks: s.totalClicks };
-        } catch {
-          return u;
-        }
-      })
-    );
-    setUrls(enriched);
+    try {
+      const items = await apiListAll();
+      const mapped = items.map((i) => ({
+        id: `srv_${i.shortcode}`,
+        longUrl: i.url,
+        shortcode: i.shortcode,
+        createdAt: new Date(i.createdAt).getTime(),
+        expiresAt: new Date(i.expiry).getTime(),
+        totalClicks: i.totalClicks,
+        clicks: []
+      }));
+      setUrls(mapped);
+    } catch {
+      setUrls([]);
+    }
     await Log('url-shortener', 'info', 'stats', 'Statistics page loaded');
   };
 
