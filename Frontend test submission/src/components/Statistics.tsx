@@ -28,6 +28,7 @@ export default function Statistics() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [details, setDetails] = useState<Record<string, { clicks: { timestamp: number; referrer: string; location: string }[]; totalClicks: number; expiry: number } | 'loading'>>({});
 
   useEffect(() => {
     loadStatistics();
@@ -74,10 +75,30 @@ export default function Statistics() {
   };
 
   const getStatusChip = (url: ShortUrl) => {
-    if (isExpired(url.expiresAt)) {
+    const effectiveExpiry = details[url.shortcode] && details[url.shortcode] !== 'loading' ? (details[url.shortcode] as any).expiry : url.expiresAt;
+    if (isExpired(effectiveExpiry)) {
       return <Chip label="Expired" color="error" size="small" />;
     }
     return <Chip label="Active" color="success" size="small" />;
+  };
+
+  const onExpand = async (shortcode: string, expanded: boolean) => {
+    if (!expanded) return;
+    if (details[shortcode] && details[shortcode] !== 'loading') return;
+    setDetails(prev => ({ ...prev, [shortcode]: 'loading' }));
+    try {
+      const s = await apiGetStats(shortcode);
+      setDetails(prev => ({
+        ...prev,
+        [shortcode]: {
+          clicks: s.clicks.map(c => ({ timestamp: new Date(c.timestamp).getTime(), referrer: c.referrer, location: c.location })),
+          totalClicks: s.totalClicks,
+          expiry: new Date(s.expiry).getTime()
+        }
+      }));
+    } catch {
+      setDetails(prev => ({ ...prev, [shortcode]: { clicks: [], totalClicks: 0, expiry: Date.now() } }));
+    }
   };
 
   return (
@@ -121,12 +142,12 @@ export default function Statistics() {
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {`http://localhost:5000/${url.shortcode}`}
+                        {`${window.location.origin}/${url.shortcode}`}
                       </Typography>
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={() => copyToClipboard(`http://localhost:5000/${url.shortcode}`)}
+                        onClick={() => copyToClipboard(`${window.location.origin}/${url.shortcode}`)}
                       >
                         Copy
                       </Button>
@@ -151,20 +172,18 @@ export default function Statistics() {
                   <TableCell>{getStatusChip(url)}</TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight="bold">
-                      {url.totalClicks}
+                      {(details[url.shortcode] && details[url.shortcode] !== 'loading') ? (details[url.shortcode] as any).totalClicks : url.totalClicks}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Accordion>
+                    <Accordion onChange={(_, exp) => onExpand(url.shortcode, exp)}>
                       <AccordionSummary expandIcon={<span aria-hidden>▼</span>}>
                         <Typography variant="body2">View Click Details</Typography>
                       </AccordionSummary>
                       <AccordionDetails>
-                        {url.clicks.length === 0 ? (
-                          <Typography variant="body2" color="text.secondary">
-                            No clicks recorded
-                          </Typography>
-                        ) : (
+                        {details[url.shortcode] === 'loading' ? (
+                          <Typography variant="body2" color="text.secondary">Loading...</Typography>
+                        ) : (details[url.shortcode] && (details[url.shortcode] as any).clicks?.length > 0) ? (
                           <Table size="small">
                             <TableHead>
                               <TableRow>
@@ -174,7 +193,7 @@ export default function Statistics() {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {url.clicks.map((click, index) => (
+                              {(details[url.shortcode] as any).clicks.map((click: any, index: number) => (
                                 <TableRow key={index}>
                                   <TableCell>{formatClickTime(click.timestamp)}</TableCell>
                                   <TableCell>
@@ -196,6 +215,8 @@ export default function Statistics() {
                               ))}
                             </TableBody>
                           </Table>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">No clicks recorded</Typography>
                         )}
                       </AccordionDetails>
                     </Accordion>

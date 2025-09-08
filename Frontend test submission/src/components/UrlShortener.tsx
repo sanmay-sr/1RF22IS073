@@ -221,12 +221,12 @@ export default function UrlShortener() {
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>
-                    {`http://localhost:5000/${result.shortcode}`}
+                    {`${window.location.origin}/${result.shortcode}`}
                   </Typography>
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => copyToClipboard(`http://localhost:5000/${result.shortcode}`)}
+                    onClick={() => copyToClipboard(`${window.location.origin}/${result.shortcode}`)}
                   >
                     Copy
                   </Button>
