@@ -1,38 +1,36 @@
-# Backend Test Submission
+# Backend test submission
 
-A simple backend test submission for the URL shortener application.
-
-## Installation
-
-```bash
-npm install
-```
-
-## Build
-
-```bash
-npm run build
-```
+Simple Node.js + Express URL shortener backend in TypeScript.
 
 ## Run
 
 ```bash
-npm start
-```
-
-## Development
-
-```bash
+cd "Backend test submission"
+npm install
 npm run dev
 ```
 
+Server: http://localhost:5000
+
 ## Endpoints
 
-- `GET /health` - Health check endpoint
-- `GET /api/test` - Test endpoint
+- POST `/shorturls` → create short URL
+  - Body: `{ url, validity?, shortcode? }`
+  - Returns: `201 { shortLink, expiry }`
+- GET `/shorturls/:shortcode` → stats
+- GET `/:shortcode` → redirect
 
-## Notes
+## Folder structure
 
-- Uses the logging middleware for all operations
-- Integrates with the shared logging system
-- Basic Express.js server setup
+```
+src/
+  middleware/logging.ts   # logging middleware + helper
+  routes/shorturls.ts     # API routes
+  server.ts               # entry
+```
+
+## Logging
+
+- `loggingMiddleware` is registered first.
+- All major actions call `log(stack,level,package,message)` which POSTs to the test server using the Bearer token.
+- Network errors are ignored.

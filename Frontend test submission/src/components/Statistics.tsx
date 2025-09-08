@@ -18,9 +18,10 @@ import {
   AccordionSummary,
   AccordionDetails
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { ShortUrl } from '../types';
-import { loadData, isExpired } from '../utils/storage';
+import { loadData } from '../utils/storage';
+import { apiGetStats } from '../utils/api';
+import { isExpired } from '../utils/urlUtils';
 import { Log } from '../logging/log';
 
 export default function Statistics() {
@@ -34,7 +35,18 @@ export default function Statistics() {
 
   const loadStatistics = async () => {
     const data = loadData();
-    setUrls(data.urls);
+    // Try to enrich with backend stats where available
+    const enriched = await Promise.all(
+      data.urls.map(async (u) => {
+        try {
+          const s = await apiGetStats(u.shortcode);
+          return { ...u, expiresAt: new Date(s.expiry).getTime(), totalClicks: s.totalClicks };
+        } catch {
+          return u;
+        }
+      })
+    );
+    setUrls(enriched);
     await Log('url-shortener', 'info', 'stats', 'Statistics page loaded');
   };
 
@@ -133,7 +145,7 @@ export default function Statistics() {
                   </TableCell>
                   <TableCell>
                     <Accordion>
-                      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <AccordionSummary expandIcon={<span aria-hidden>▼</span>}>
                         <Typography variant="body2">View Click Details</Typography>
                       </AccordionSummary>
                       <AccordionDetails>

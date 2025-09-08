@@ -14,6 +14,7 @@ import {
 import { UrlEntry, ShortUrl } from '../types';
 import { isValidUrl, isValidShortcode, generateShortcode, isExpired } from '../utils/urlUtils';
 import { addUrl, loadData } from '../utils/storage';
+import { apiCreateShortUrl, extractShortcodeFromLink } from '../utils/api';
 import { Log } from '../logging/log';
 
 const MAX_ENTRIES = 5;
@@ -114,20 +115,26 @@ export default function UrlShortener() {
         shortcode = generateUniqueShortcode();
       }
 
-      const now = Date.now();
-      const newUrl: ShortUrl = {
-        id: `url_${now}_${i}`,
-        longUrl: entry.longUrl,
-        shortcode,
-        createdAt: now,
-        expiresAt: now + (entry.validity * 60 * 1000),
-        totalClicks: 0,
-        clicks: []
-      };
-
-      addUrl(newUrl);
-      newResults.push(newUrl);
-      await Log('url-shortener', 'info', 'url-creation', `Created short URL: ${shortcode} -> ${entry.longUrl}`);
+      try {
+        const response = await apiCreateShortUrl({ url: entry.longUrl, validity: entry.validity, shortcode: shortcode || undefined });
+        const sc = extractShortcodeFromLink(response.shortLink) || shortcode;
+        const now = Date.now();
+        const newUrl: ShortUrl = {
+          id: `url_${now}_${i}`,
+          longUrl: entry.longUrl,
+          shortcode: sc,
+          createdAt: now,
+          expiresAt: new Date(response.expiry).getTime(),
+          totalClicks: 0,
+          clicks: []
+        };
+        addUrl(newUrl);
+        newResults.push(newUrl);
+        await Log('url-shortener', 'info', 'url-creation', `Created short URL via backend: ${sc} -> ${entry.longUrl}`);
+      } catch (e: any) {
+        setErrors(prev => [...prev, `Entry ${i + 1}: ${e?.message || 'Create failed'}`]);
+        await Log('url-shortener', 'error', 'url-creation', `Create failed: ${e?.message || 'unknown'}`);
+      }
     }
 
     setResults(newResults);

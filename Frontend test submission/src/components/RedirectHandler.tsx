@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Typography, Card, CardContent, CircularProgress, Alert } from '@mui/material';
-import { findUrlByShortcode, updateUrl, isExpired } from '../utils/storage';
+import { findUrlByShortcode, updateUrl } from '../utils/storage';
+import { isExpired } from '../utils/urlUtils';
 import { ShortUrl } from '../types';
 import { Log } from '../logging/log';
 
@@ -56,10 +57,10 @@ export default function RedirectHandler() {
 
     setStatus('redirecting');
     
-    // Redirect after a short delay
+    // Redirect via backend so click gets counted there too
     setTimeout(() => {
-      window.location.href = url.longUrl;
-    }, 1000);
+      window.location.href = `http://localhost:5000/${shortcode}`;
+    }, 800);
   };
 
   if (status === 'loading') {
