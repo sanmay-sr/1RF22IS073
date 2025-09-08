@@ -1,72 +1,59 @@
-# URL Shortener Application
+# URL Shortener (Frontend + Backend)
 
-A React TypeScript URL shortener frontend with logging middleware integration.
+Small, production-like URL shortener built with React + TypeScript (frontend) and Node.js + Express (backend). Logging is integrated via a reusable function that POSTs to the evaluation server.
 
-## Project Structure
+## Structure
 
 ```
 1RF22IS073/
-├── Logging Middleware/          # Reusable logging package
-├── Backend test submission/     # Backend test implementation  
-├── Frontend test submission/    # React frontend application
+├── Logging Middleware/          # Reusable log(stack,level,package,message)
+├── Backend test submission/     # Node.js + Express service (in-memory Map)
+├── Frontend test submission/    # React + MUI app (Vite)
 └── README.md
 ```
 
-## Quick Start
+## Run locally
 
-### Frontend (Main Application)
+1) Backend (required)
+```bash
+cd "Backend test submission"
+npm install
+npm run dev
+# http://localhost:5000
+```
 
+2) Frontend
 ```bash
 cd "Frontend test submission"
 npm install
 npm run dev
+# http://localhost:3000
 ```
 
-The application will run at http://localhost:3000
+## Endpoints (backend)
+- POST `/shorturls` → create. Body: `{ url, validity?, shortcode? }` → `201 { shortLink, expiry }`
+- GET  `/shorturls` → list all `{ items: [...] }`
+- GET  `/shorturls/:shortcode` → stats for a code
+- GET  `/:shortcode` → redirect, also records click `{timestamp, referrer, location}`
 
-### Backend Test
+Notes:
+- Data is stored in-memory (Map); it resets on backend restart.
+- Coarse location is classified as `local` | `private` | `public` | `unknown` (no external APIs).
 
-```bash
-cd "Backend test submission"
-npm install
-npm run build
-npm start
-```
+## Frontend behavior
+- Shorten up to 5 URLs at once; validation for URL, validity (1–1440), and shortcode (3–12 alphanumeric).
+- Short links are displayed/copy as `http://localhost:3000/<code>`; visiting this route in the app redirects via backend to count clicks.
+- Statistics page lists all shortcodes (from backend list) and loads per-code stats on expansion.
 
-### Logging Middleware
+## Logging
+- Frontend: `Frontend test submission/src/logging/log.ts`
+- Backend middleware + helper: `Backend test submission/src/middleware/logging.ts`
+- Reusable package reference: `Logging Middleware/src/index.ts`
+All major actions (create, redirect, errors, page loads) log to the evaluation server; network errors are ignored by design.
 
-```bash
-cd "Logging Middleware"
-npm install
-npm run build
-```
+## Screenshots
+- Frontend test submission/Screenshots
+- Backend test submission/Screenshots
 
-## Features
-
-- **URL Shortening**: Create up to 5 short URLs at once
-- **Custom Shortcodes**: Optional custom shortcodes (3-12 alphanumeric chars)
-- **Expiration**: Configurable validity (1-1440 minutes, default 30)
-- **Statistics**: View click counts and detailed click records
-- **Redirection**: Automatic redirection via /:shortcode routes
-- **Persistence**: Data stored in localStorage
-- **Logging**: Integrated logging middleware for all operations
-
-## Logging Integration
-
-The logging middleware is integrated throughout the application:
-
-- **File**: `Frontend test submission/src/logging/log.ts`
-- **Middleware Location**: `Logging Middleware/src/index.ts`
-- **Usage**: All major actions log to the evaluation service
-
-## Technology Stack
-
-- React 18 with TypeScript
-- Material UI for components
-- React Router for navigation
-- Vite for build tooling
-- localStorage for persistence
-
-## No References Policy
-
-No references to Affordmed in repo name, README, or commit messages as required.
+## Policy
+No references to Affordmed in repo name, README, or commit messages (as required).

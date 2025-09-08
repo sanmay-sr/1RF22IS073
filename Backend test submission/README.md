@@ -1,6 +1,6 @@
 # Backend test submission
 
-Simple Node.js + Express URL shortener backend in TypeScript.
+Node.js + Express URL shortener in TypeScript. Stores data in-memory.
 
 ## Run
 
@@ -8,17 +8,16 @@ Simple Node.js + Express URL shortener backend in TypeScript.
 cd "Backend test submission"
 npm install
 npm run dev
+# http://localhost:5000
 ```
 
-Server: http://localhost:5000
-
 ## Endpoints
-
 - POST `/shorturls` → create short URL
   - Body: `{ url, validity?, shortcode? }`
   - Returns: `201 { shortLink, expiry }`
-- GET `/shorturls/:shortcode` → stats
-- GET `/:shortcode` → redirect
+- GET `/shorturls` → list all short URLs
+- GET `/shorturls/:shortcode` → stats for a code
+- GET `/:shortcode` → redirect (records click with `{timestamp, referrer, location}`)
 
 ## Folder structure
 
@@ -30,7 +29,6 @@ src/
 ```
 
 ## Logging
-
-- `loggingMiddleware` is registered first.
-- All major actions call `log(stack,level,package,message)` which POSTs to the test server using the Bearer token.
+- `loggingMiddleware` is first in the chain.
+- All major actions call `log(stack,level,package,message)` to the evaluation server (Bearer token included).
 - Network errors are ignored.
