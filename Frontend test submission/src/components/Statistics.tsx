@@ -27,6 +27,7 @@ export default function Statistics() {
   const [urls, setUrls] = useState<ShortUrl[]>([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadStatistics();
@@ -45,8 +46,10 @@ export default function Statistics() {
         clicks: []
       }));
       setUrls(mapped);
-    } catch {
+      setLoadError(null);
+    } catch (e: any) {
       setUrls([]);
+      setLoadError(e?.message || 'Failed to load');
     }
     await Log('url-shortener', 'info', 'stats', 'Statistics page loaded');
   };
@@ -86,9 +89,16 @@ export default function Statistics() {
       {urls.length === 0 ? (
         <Card>
           <CardContent>
-            <Typography variant="h6" color="text.secondary" align="center">
-              No shortened URLs found
-            </Typography>
+            {loadError ? (
+              <Typography variant="h6" color="error" align="center">{loadError}</Typography>
+            ) : (
+              <Typography variant="h6" color="text.secondary" align="center">
+                No shortened URLs found
+              </Typography>
+            )}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button variant="outlined" onClick={loadStatistics}>Refresh</Button>
+            </Box>
           </CardContent>
         </Card>
       ) : (
@@ -111,12 +121,12 @@ export default function Statistics() {
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {window.location.origin}/{url.shortcode}
+                        {`http://localhost:5000/${url.shortcode}`}
                       </Typography>
                       <Button
                         size="small"
                         variant="outlined"
-                        onClick={() => copyToClipboard(`${window.location.origin}/${url.shortcode}`)}
+                        onClick={() => copyToClipboard(`http://localhost:5000/${url.shortcode}`)}
                       >
                         Copy
                       </Button>

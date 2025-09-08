@@ -12,7 +12,7 @@ import {
   Chip
 } from '@mui/material';
 import { UrlEntry, ShortUrl } from '../types';
-import { isValidUrl, isValidShortcode, generateShortcode, isExpired } from '../utils/urlUtils';
+import { isValidUrl, isValidShortcode } from '../utils/urlUtils';
 // Removed localStorage persistence
 import { apiCreateShortUrl, extractShortcodeFromLink } from '../utils/api';
 import { Log } from '../logging/log';
@@ -69,21 +69,7 @@ export default function UrlShortener() {
     return validationErrors;
   };
 
-  const checkShortcodeUniqueness = (shortcode: string, excludeIndex?: number): boolean => {
-    // Backend is source of truth now
-    return !data.urls.some(url => 
-      url.shortcode === shortcode && 
-      !isExpired(url.expiresAt)
-    );
-  };
-
-  const generateUniqueShortcode = (): string => {
-    let shortcode: string;
-    do {
-      shortcode = generateShortcode();
-    } while (!checkShortcodeUniqueness(shortcode));
-    return shortcode;
-  };
+  // Uniqueness and generation handled by backend
 
   const handleSubmit = async () => {
     setErrors([]);
@@ -96,28 +82,16 @@ export default function UrlShortener() {
     }
 
     const newResults: ShortUrl[] = [];
-    const data = loadData();
 
     for (let i = 0; i < entries.length; i++) {
       const entry = entries[i];
       if (!entry.longUrl.trim()) continue;
 
-      let shortcode = entry.shortcode;
-      
-      // Check if custom shortcode is unique
-      if (shortcode) {
-        if (!checkShortcodeUniqueness(shortcode)) {
-          setErrors([...errors, `Entry ${i + 1}: Shortcode '${shortcode}' already exists`]);
-          await Log('url-shortener', 'error', 'shortcode', `Shortcode collision: ${shortcode}`);
-          continue;
-        }
-      } else {
-        shortcode = generateUniqueShortcode();
-      }
+      const shortcode = entry.shortcode || undefined;
 
       try {
-        const response = await apiCreateShortUrl({ url: entry.longUrl, validity: entry.validity, shortcode: shortcode || undefined });
-        const sc = extractShortcodeFromLink(response.shortLink) || shortcode;
+        const response = await apiCreateShortUrl({ url: entry.longUrl, validity: entry.validity, shortcode });
+        const sc = extractShortcodeFromLink(response.shortLink) || (shortcode as string);
         const now = Date.now();
         const newUrl: ShortUrl = {
           id: `url_${now}_${i}`,
@@ -247,12 +221,12 @@ export default function UrlShortener() {
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                   <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>
-                    {window.location.origin}/{result.shortcode}
+                    {`http://localhost:5000/${result.shortcode}`}
                   </Typography>
                   <Button
                     size="small"
                     variant="outlined"
-                    onClick={() => copyToClipboard(`${window.location.origin}/${result.shortcode}`)}
+                    onClick={() => copyToClipboard(`http://localhost:5000/${result.shortcode}`)}
                   >
                     Copy
                   </Button>
